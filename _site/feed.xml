@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.0">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2021-03-14T16:18:24-07:00</updated><id>/feed.xml</id><title type="html">Klabo.blog</title><subtitle>Writing about Bitcoin and the Lightning Network</subtitle><entry><title type="html">Transaction Types in a Lightning Channel</title><link href="/lightning/bitcoin/2021/03/14/lightning-channel-transaction-types.html" rel="alternate" type="text/html" title="Transaction Types in a Lightning Channel" /><published>2021-03-14T00:00:00-08:00</published><updated>2021-03-14T00:00:00-08:00</updated><id>/lightning/bitcoin/2021/03/14/lightning-channel-transaction-types</id><content type="html" xml:base="/lightning/bitcoin/2021/03/14/lightning-channel-transaction-types.html">&lt;p&gt;Every payment made over the Lightning network is made with valid Bitcoin transactions. The Lightning network’s main benefit is that it allows you to use real Bitcoin transactions, along with their security guarantees, without having to pay to have every one included into a block.&lt;/p&gt;
+
+&lt;p&gt;When you open a channel with someone what you are really doing is setting up a communication channel where you can send Bitcoin transactions back and forth to each other, without submitting to the Bitcoin blockchain.&lt;/p&gt;
+
+&lt;p&gt;The innovation of the Lightning network was that it figured out a safe way to transact off-chain, thus reducing the amount of fees required. The “network” part of the Lightning network could technically be replaced with anything that allows you swap Bitcoin transaction data back and forth with someone else.&lt;/p&gt;
+
+&lt;p&gt;So, what type of transactions make this possible? Assuming we don’t want to get our bitcoin stolen or stuck in an un-spendable output. That’s what we will try and explain in the following sections. For a more thorough explanation you should check out &lt;a href=&quot;https://github.com/lnbook/lnbook&quot;&gt;Mastering the Lightning Network&lt;/a&gt;. Or even more thorough, the &lt;a href=&quot;https://github.com/lightningnetwork/lightning-rfc&quot;&gt;Lightning Network Spec&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;opening-a-channel&quot;&gt;Opening a Channel&lt;/h2&gt;
+&lt;p&gt;When you want to transact with some other node on the Lightning Network you open a channel with them. This will allow you to coordinate to create and sign Bitcoin transactions. Most of these will not be submitted to the blockchain, otherwise why use Lightning? But, any of them could be. They are all valid and would be accepted by the Bitcoin network.&lt;/p&gt;
+
+&lt;p&gt;We’ll use our good friends &lt;em&gt;Alice&lt;/em&gt; and &lt;em&gt;Bob&lt;/em&gt; to represent the two nodes that want to make payments over a Lightning channel. In this example &lt;em&gt;Alice&lt;/em&gt; wants to open a channel with &lt;em&gt;Bob&lt;/em&gt; with a capacity of 1 BTC. The capacity is the total amount that will be available to use in this channel, it will all start of in &lt;em&gt;Alice’s&lt;/em&gt; control, and then if she wants to make a payment to &lt;em&gt;Bob&lt;/em&gt;, she will send him some BTC from that 1 BTC balance.&lt;/p&gt;
+
+&lt;h3 id=&quot;the-funding-transaction&quot;&gt;The Funding Transaction&lt;/h3&gt;
+
+&lt;p&gt;&lt;em&gt;Alice&lt;/em&gt; starts off with 1 BTC in her personal Lightning node wallet. This is the same as a Bitcoin wallet but usually Lightning nodes have their own. Right now the 1 BTC is fully in her control, she has the private key stored on her machine and is able to spend this 1 BTC.&lt;/p&gt;
+
+&lt;p&gt;When &lt;em&gt;Alice&lt;/em&gt; decides to open a channel with &lt;em&gt;Bob&lt;/em&gt; she needs to move that 1 BTC to an output that both her and &lt;em&gt;Bob&lt;/em&gt; are able to access, if they agree to make a payment. So, &lt;em&gt;Alice&lt;/em&gt; will create a Funding Transaction.&lt;/p&gt;
+
+&lt;p&gt;The funding transaction is a 2-of-2 multi-sig output where she is one of the required signers and &lt;em&gt;Bob&lt;/em&gt; is the other. &lt;em&gt;Alice&lt;/em&gt; creates this transaction and sends it to &lt;em&gt;Bob&lt;/em&gt; to sign. He has no reason not to agree to sign this because &lt;em&gt;Alice&lt;/em&gt; is adding all of the funds, he has nothing to lose.&lt;/p&gt;
+
+&lt;p&gt;So &lt;em&gt;Alice&lt;/em&gt; will create a 2-of-2 multi-sig transaction, send it to Bob to sign and then hold on to it. She doesn’t want to submit this to the network yet, if she did at this point she would lose control of her 1 BTC if &lt;em&gt;Bob&lt;/em&gt; didn’t want to sign a new transaction spending that multi-sig output.&lt;/p&gt;
+
+&lt;h3 id=&quot;commitment-transactions&quot;&gt;Commitment Transactions&lt;/h3&gt;
+
+&lt;p&gt;So at this point &lt;em&gt;Alice&lt;/em&gt; has a signed multi-sig transaction in her possession but not submitted to the network. Next she will create a Commitment Transaction. A commitment transaction is the type of transaction we will be creating for every payment that is made between &lt;em&gt;Alice&lt;/em&gt; and &lt;em&gt;Bob&lt;/em&gt;. This transaction spends from the funding transaction and sends the balance to &lt;em&gt;Alice&lt;/em&gt; and &lt;em&gt;Bob&lt;/em&gt;, the amounts depending on payments that have occurred. This first commitment transaction will be spending the 1 BTC output from the funding transaction and sending the 1 BTC back to &lt;em&gt;Alice&lt;/em&gt; and zero BTC to &lt;em&gt;Bob&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Alice creates this transaction locally and sends it to &lt;em&gt;Bob&lt;/em&gt; to sign. Once again he has no reason not to sign it so he does and sends it back to &lt;em&gt;Alice&lt;/em&gt;. Now that &lt;em&gt;Alice&lt;/em&gt; has this commitment transaction she can now submit the funding transaction to the Bitcoin network. This is safe for her to do because if she needs to close that channel for some reason she has the commitment transaction that she can send off that will spend the multi-sig and send her 1 BTC back to her wallet.&lt;/p&gt;
+
+&lt;p&gt;From this point forward &lt;em&gt;Alice&lt;/em&gt; can make a payment to &lt;em&gt;Bob&lt;/em&gt; by creating a new commitment transaction with the updated amounts. For example if &lt;em&gt;Alice&lt;/em&gt; sent 0.1 BTC to &lt;em&gt;Bob&lt;/em&gt; the new commitment transaction would credit 0.9 BTC to her wallet and 0.1 BTC to &lt;em&gt;Bob’s&lt;/em&gt; wallet.&lt;/p&gt;
+
+&lt;p&gt;Every time a payment is made a new commitment transaction is created, both peers have a copy (actually they are slightly different which we’ll go over in the next section) signed by the other. At any point one of them could submit a commitment transaction to the network and close the channel by spending the funding transaction’s output.&lt;/p&gt;
+
+&lt;h3 id=&quot;the-two-sides-of-a-commitment-transaction&quot;&gt;The Two Sides of a Commitment Transaction&lt;/h3&gt;
+
+&lt;p&gt;Although any of these commitment transactions could be sent to the network to close the channel, they are all valid, the network doesn’t have a way of knowing if this is actually the most recent commitment transaction. &lt;em&gt;Alice&lt;/em&gt; could always send the very first commitment transaction where all the funds get sent back to her, even after making payments to &lt;em&gt;Bob&lt;/em&gt;. We will see how logic in the transaction prevents this.&lt;/p&gt;
+
+&lt;p&gt;There are two ways these transactions prevent cheating by submitting an out-dated transaction to the network. Time-locks and a Revocation Key.&lt;/p&gt;
+
+&lt;h3 id=&quot;time-locks&quot;&gt;Time-Locks&lt;/h3&gt;
+
+&lt;p&gt;This is where &lt;em&gt;Alice&lt;/em&gt; and &lt;em&gt;Bob’s&lt;/em&gt; commitment transactions differ slightly. Each new commitment transaction that &lt;em&gt;Alice&lt;/em&gt; creates and has signed by &lt;em&gt;Bob&lt;/em&gt; has a time-lock on her output but not on &lt;em&gt;Bob’s&lt;/em&gt; output. And &lt;em&gt;Bob’s&lt;/em&gt; commitment transaction has a time-lock on his output, but not on &lt;em&gt;Alice’s&lt;/em&gt;. A time-lock prevents an output from being spent for a certain number of blocks (or until a specific time).&lt;/p&gt;
+
+&lt;p&gt;If &lt;em&gt;Alice&lt;/em&gt; has gone offline and isn’t around to close the channel cooperatively &lt;em&gt;Bob&lt;/em&gt; may need to use his most recent commitment transaction to close the channel. In that case the time-lock just serves as an incentive to get both peers to close cooperatively, &lt;em&gt;Bob&lt;/em&gt; would rather not wait 1000 blocks to be able to receive his bitcoin. The fee is also determined at the time the commitment transaction was created and will probably be much higher than would be necessary normally. So &lt;em&gt;Bob&lt;/em&gt; and &lt;em&gt;Alice&lt;/em&gt; would both prefer to decide to close the channel together, make a new commitment transaction with no time-lock for either, and a reasonable fee. But, if &lt;em&gt;Bob&lt;/em&gt; has to close his channel he can, he’ll just have to wait to access his coins.&lt;/p&gt;
+
+&lt;p&gt;The time-lock also serves a more important purpose though. It allows the other peer to use their revocation key if their partner tries to cheat and submit an out-dated commitment transaction to the network.&lt;/p&gt;
+
+&lt;h3 id=&quot;revocation-key&quot;&gt;Revocation Key&lt;/h3&gt;
+
+&lt;p&gt;The revocation key is one more place where &lt;em&gt;Alice&lt;/em&gt; and &lt;em&gt;Bob’s&lt;/em&gt; commitment transactions differ. If either of them has this secret key they have the ability to claim the other’s balance in the channel. They would have the entire channel capacity sent to them.&lt;/p&gt;
+
+&lt;p&gt;On each update to the commitment transaction, they exchange half of the revocation key for the previous transaction. So whenever there is a new commitment transaction, the previous one is invalidated. The revocation key is only useable on an out-dated commitment transaction that has been confirmed on the blockchain.&lt;/p&gt;
+
+&lt;p&gt;This is why the time-lock is necessary, if &lt;em&gt;Bob&lt;/em&gt; tries to cheat and use an out of date commitment transaction, when it is confirmed on the blockchain &lt;em&gt;Alice&lt;/em&gt; then has the 1000 blocks (this is a configurable time) to use the revocation key and take &lt;em&gt;Bob’s&lt;/em&gt; balance in the channel. &lt;em&gt;Bob&lt;/em&gt; is not able to move those bitcoin until the 1000 blocks has passed, so as long as &lt;em&gt;Alice&lt;/em&gt; notices she can take the funds back.&lt;/p&gt;
+
+&lt;p&gt;If your lightning node is online when this occurs you should be notified of it. There is also something called a Watchtower which is a service that can observe the blockchain for you and watch out for this.&lt;/p&gt;
+
+&lt;h3 id=&quot;closing-transaction&quot;&gt;Closing Transaction&lt;/h3&gt;
+
+&lt;p&gt;Ideally both &lt;em&gt;Alice&lt;/em&gt; and &lt;em&gt;Bob&lt;/em&gt; cooperate the whole time. They agree on a time to close their channel and create one final commitment transaction. This final transaction doesn’t need any time-locks or revocation keys because they have both agreed to split the balance of the channel in a specific way. Also, like I mentioned before this allows the transaction fee to be set to a reasonable value. (The creator of the channel always pays the transaction fees out of their balance)&lt;/p&gt;
+
+&lt;p&gt;And that’s it. At any point during the life-cycle of the channel either participant has the ability to bail out and get their funds back, eventually.&lt;/p&gt;
+
+&lt;h3 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h3&gt;
+
+&lt;p&gt;So in a lightning channel there are really two types of transactions. The funding transaction, and commitment transactions. The commitment transactions vary slightly depending on who owns them. Depending on how long the channel is open and how often you make payments, you will have one funding transaction, potentially infinite commitment transactions, and a closing transaction (which is basically just the last commitment transaction).&lt;/p&gt;
+
+&lt;p&gt;I hope that is helpful in understanding lightning channels and the bitcoin transactions they are built on. Like I mentioned earlier &lt;a href=&quot;https://github.com/lnbook/lnbook&quot;&gt;Mastering the Lightning Network&lt;/a&gt; is a good resource to learn more. As well as the &lt;a href=&quot;https://github.com/lightningnetwork/lightning-rfc&quot;&gt;Lightning Network Spec&lt;/a&gt;.&lt;/p&gt;</content><author><name></name></author><category term="lightning" /><category term="bitcoin" /><summary type="html">Every payment made over the Lightning network is made with valid Bitcoin transactions. The Lightning network’s main benefit is that it allows you to use real Bitcoin transactions, along with their security guarantees, without having to pay to have every one included into a block.</summary></entry><entry><title type="html">How Does Sphinx Chat Work?</title><link href="/sphinx/lightning/bitcoin/2021/03/08/how-does-sphinx-chat-work.html" rel="alternate" type="text/html" title="How Does Sphinx Chat Work?" /><published>2021-03-08T00:00:00-08:00</published><updated>2021-03-08T00:00:00-08:00</updated><id>/sphinx/lightning/bitcoin/2021/03/08/how-does-sphinx-chat-work</id><content type="html" xml:base="/sphinx/lightning/bitcoin/2021/03/08/how-does-sphinx-chat-work.html">&lt;p&gt;Like a lot of Bitcoin / Lightning Network enthusiasts out there I have just started using Sphinx Chat. I wasn’t able to find a good overview of the system anywhere so I decided I would write one. I’m not an expert on any of this stuff but I did some poking around in the &lt;a href=&quot;https://github.com/stakwork/sphinx-relay&quot;&gt;sphinx-relay&lt;/a&gt; GitHub repo and I think I understand the basic setup.&lt;/p&gt;
+
+&lt;p&gt;If you are using Sphinx you probably know that it is built on top of the Lightning Network. &lt;a href=&quot;https://github.com/lightningnetwork/lnd&quot;&gt;LND&lt;/a&gt; specifically (although other lightning network projects might be supported in the future). In case you don’t know, LND is built on top of Bitcoin. It is a piece of software that interacts with the Bitcoin blockchain to create multi-sig transactions that can open lightning channels, as well as create &lt;a href=&quot;https://en.bitcoin.it/wiki/Hash_Time_Locked_Contracts&quot;&gt;HTLC contracts&lt;/a&gt; for sending payments on the Lightning Network.&lt;/p&gt;
+
+&lt;p&gt;So at a high level you have bitcoind (or btcd) as the base layer. LND is built on top of that. And sphinx-relay is built on top of LND.&lt;/p&gt;
+
+&lt;p&gt;sphinx-relay itself is a node.js app built with &lt;a href=&quot;https://github.com/expressjs/express&quot;&gt;express&lt;/a&gt;. It acts as a server, it relays messages, boosts, etc. from your client (iOS, desktop, Android) and translates them into Lightning Network payments.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/sphinx-relay-diagram.png&quot; alt=&quot;image&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;how-does-sphinx-relay-turn-transactions-into-messages&quot;&gt;How Does Sphinx Relay Turn Transactions into Messages?&lt;/h2&gt;
+
+&lt;p&gt;When you send a message to another person on the Sphinx iOS app for example, you are actually sending them a lightning payment. It depends on the context but it is commonly a 1 satoshi payment. Your iOS app sends a request to the sphinx-relay server, which uses LND to send a Lightning payment. So where is the data for the message coming from?&lt;/p&gt;
+
+&lt;p&gt;sphinx-relay takes advantage of an LND feature that allows you to add custom data to a Lightning payment. There is a parameter you can pass along with a payment called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dest_custom_records&lt;/code&gt;, this allows you to send arbitrary data along with your payment. Sphinx uses this field to add data about the message or action you are taking on the client. So if your sphinx-relay instance receives a payment with this information it can parse it out and save it as a new message (or any other model that it understands).&lt;/p&gt;
+
+&lt;p&gt;You can see in the code below that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LND.keysendMessage&lt;/code&gt; is being passed a data object. This would be where the message content and recipient etc. go.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/keysend-data-code-snippet.png&quot; alt=&quot;image&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;what-is-a-keysend-payment-versus-a-regular-payment&quot;&gt;What is a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;keysend&lt;/code&gt; Payment versus a Regular Payment?&lt;/h2&gt;
+
+&lt;p&gt;You may have noticed that these payments are sent as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;keysend&lt;/code&gt; payments instead of using invoices like you may be used to with Lightning. You can get the full description &lt;a href=&quot;https://lightning.readthedocs.io/lightning-keysend.7.html&quot;&gt;here&lt;/a&gt;. The gist of it is that keysend is a relatively new feature of LND and coming in c-lightning, that allows you to just send satoshis without an invoice. This is obviously useful when you are sending sats with every message posted.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/lnd-keysend-doc.png&quot; alt=&quot;image&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;So to wrap up sphinx-relay is a node app running on top of LND, which runs on top of bitcoind (or btcd). Your client (iOS app, Android app, desktop) interacts with the sphinx-relay server running alongside your LND instance to send and receive message payments. Sphinx adds data to Lightning payments that it can interpret as messages or group joins, etc.&lt;/p&gt;
+
+&lt;p&gt;There is a lot more going on than I’ve laid out here but I hope this gives you a good mental model of how it all works together. I may have gotten something wrong here as well, if I did let me know! On Twitter &lt;a href=&quot;https://twitter.com/joelklabo&quot;&gt;@joelklabo&lt;/a&gt; or email me &lt;a href=&quot;mailto:joelklabo@gmail.com&quot;&gt;joelklabo@gmail.com&lt;/a&gt;&lt;/p&gt;</content><author><name></name></author><category term="sphinx" /><category term="lightning" /><category term="bitcoin" /><summary type="html">Like a lot of Bitcoin / Lightning Network enthusiasts out there I have just started using Sphinx Chat. I wasn’t able to find a good overview of the system anywhere so I decided I would write one. I’m not an expert on any of this stuff but I did some poking around in the sphinx-relay GitHub repo and I think I understand the basic setup.</summary></entry></feed>
