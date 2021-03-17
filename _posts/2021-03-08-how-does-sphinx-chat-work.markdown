@@ -3,6 +3,7 @@ layout: post
 title:  "How Does Sphinx Chat Work?"
 date:   2021-03-08
 categories: sphinx lightning bitcoin 
+permalink: 2021/03/08/how-does-sphinx-chat-work/
 ---
 Like a lot of Bitcoin / Lightning Network enthusiasts out there I have just started using Sphinx Chat. I wasn’t able to find a good overview of the system anywhere so I decided I would write one. I’m not an expert on any of this stuff but I did some poking around in the [sphinx-relay](https://github.com/stakwork/sphinx-relay) GitHub repo and I think I understand the basic setup.
 
