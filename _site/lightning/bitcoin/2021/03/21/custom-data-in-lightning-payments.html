@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.7.1 -->
+<title>Custom Data in Lightning Payments | Klabo.blog</title>
+<meta name="generator" content="Jekyll v4.2.0" />
+<meta property="og:title" content="Custom Data in Lightning Payments" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Custom Onion-Tunneled TLV Payment Metadata Records" />
+<meta property="og:description" content="Custom Onion-Tunneled TLV Payment Metadata Records" />
+<link rel="canonical" href="/lightning/bitcoin/2021/03/21/custom-data-in-lightning-payments.html" />
+<meta property="og:url" content="/lightning/bitcoin/2021/03/21/custom-data-in-lightning-payments.html" />
+<meta property="og:site_name" content="Klabo.blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-03-21T00:00:00-07:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Custom Data in Lightning Payments" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","url":"/lightning/bitcoin/2021/03/21/custom-data-in-lightning-payments.html","headline":"Custom Data in Lightning Payments","dateModified":"2021-03-21T00:00:00-07:00","datePublished":"2021-03-21T00:00:00-07:00","mainEntityOfPage":{"@type":"WebPage","@id":"/lightning/bitcoin/2021/03/21/custom-data-in-lightning-payments.html"},"description":"Custom Onion-Tunneled TLV Payment Metadata Records","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Klabo.blog" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Klabo.blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Custom Data in Lightning Payments</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2021-03-21T00:00:00-07:00" itemprop="datePublished">Mar 21, 2021
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h2 id="custom-onion-tunneled-tlv-payment-metadata-records">Custom Onion-Tunneled TLV Payment Metadata Records</h2>
+
+<p>With the release of v0.9 (<a href="https://github.com/lightningnetwork/lnd/releases/tag/v0.9.0-beta">see release notes</a>) LND added the ability to attach custom data to a payment. This enables features like <a href="https://lightning.readthedocs.io/lightning-keysend.7.html">keysend</a> which allows you to send funds to a node without an invoice, as well as messaging over lightning with apps like <a href="https://sphinx.chat">Sphinx Chat</a>. We’ll go into more detail on how those work in the next section.</p>
+
+<p>When making a lightning payment you are now able to add your own custom data to a field called <code class="language-plaintext highlighter-rouge">dest_custom_records</code>. The format of these <em>custom records</em> is the <a href="https://en.wikipedia.org/wiki/Type-length-value">Type-length-value</a> or TLV encoding scheme. Hence the name of the feature <em>Custom Onion-Tunneled TLV Payment Metadata Records</em>.</p>
+
+<p>The definition of the <code class="language-plaintext highlighter-rouge">dest_custom_records</code> parameter is as follows (<a href="https://api.lightning.community/#sendpayment">from the <code class="language-plaintext highlighter-rouge">lncli sendpayment</code> api docs</a>)</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>An optional field that can be used to pass an arbitrary set of TLV records to a peer which understands the new records. This can be used to pass application specific data during the payment attempt. Record types are required to be in the custom range &gt;= 65536. When using REST, the values must be encoded as base64.
+</code></pre></div></div>
+
+<p>Using this new feature you could send any arbitrary data along with your payment, as long as the onion packet is still within the required size limits.</p>
+
+<h2 id="use-cases">Use Cases</h2>
+
+<h3 id="keysend"><code class="language-plaintext highlighter-rouge">keysend</code></h3>
+
+<p>I mentioned earlier that these records are already being used in production apps, you may have used them yourself. The most common use I’m guessing is for <code class="language-plaintext highlighter-rouge">keysend</code> payments.</p>
+
+<p><code class="language-plaintext highlighter-rouge">keysend</code> payments allow you to make a payment to another node without an invoice. From the <a href="https://github.com/lightningnetwork/lnd/releases/tag/v0.9.0-beta">LND v0.9 Release Notes</a>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>One application of custom records is a spontaneous payment, also known as keysend. In key send, a custom record is used to encode the payment preimage in the onion payload for the recipient of the payment. This allows them to pull the payment without prior knowledge of the preimage.
+
+Note that spontaneous payment is not yet defined in the Lightning spec. Therefore the current implementation should be considered experimental and is subjected to change.
+</code></pre></div></div>
+
+<p>In a regular invoice lightning payment there is a <code class="language-plaintext highlighter-rouge">payment_preimage</code> that would normally be coming from the receiver, but in a keysend payment the sender provides the pre-image in the <code class="language-plaintext highlighter-rouge">custom_records</code> payload. So with a keysend payment the receiver doesn’t have to do anything to be able to receive payments.</p>
+
+<p>Here an example keysend payment from the release notes:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>🏔 tlncli sendpayment --keysend --dest=0270685ca81a8e4d4d01beec5781f4cc924684072ae52c507f8ebe9daf0caaab7b --amt=1000 --final_cltv_delta=40
+{
+    "payment_error": "",
+    "payment_preimage": "5c8fb9c043d00e4c1780b2e0992a979284b941700219726c71e6093c387679de",
+    "payment_route": {
+        "total_time_lock": 1657728,
+        "total_fees": "0",
+        "total_amt": "1000",
+        "hops": [
+            {
+                "chan_id": "1589156041461923840",
+                "chan_capacity": "16777215",
+                "amt_to_forward": "1000",
+                "fee": "0",
+                "expiry": 1657728,
+                "amt_to_forward_msat": "1000000",
+                "fee_msat": "0",
+                "pub_key": "0270685ca81a8e4d4d01beec5781f4cc924684072ae52c507f8ebe9daf0caaab7b",
+                "tlv_payload": true,
+                "mpp_record": null,
+                "custom_records": {
+                    "5482373484": "5c8fb9c043d00e4c1780b2e0992a979284b941700219726c71e6093c387679de"
+                }
+            }
+        ],
+        "total_fees_msat": "0",
+        "total_amt_msat": "1000000"
+    },
+    "payment_hash": "8cf790cc128a0bb0552b3223d542adfba6a93c948f84e49dcd532309f5b85634"
+}
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">keysend</code> is named what it is because you send the pre-image (just a guess). It wouldn’t be possible to make payments this way without cutsom records.</p>
+
+<p>Another use case that I’m aware of is sending peer-to-peer messages over the lightning along with a payment.</p>
+
+<h2 id="spinx-chat">Spinx Chat</h2>
+
+<p>This same feature can be used to send any data so it was only a matter of time until someone built messaging on top of it. Spinx chat uses this feature to send message information, along with the payment pre-image, in a lightning payment.</p>
+
+<p>If your node receives a payment with this custom information in it it will be stored as part of the invoice and can be interpreted as a message or whatever else you would like.</p>
+
+<p>In the <a href="https://github.com/stakwork/sphinx-relay">sphinx-relay repo</a>, which is used on top of LND to parse out and send these messages, you can see where they are adding a custom record for the message information: <a href="https://github.com/stakwork/sphinx-relay/blob/master/src/utils/lightning.ts#L240-L243">source</a></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>const keysend = (opts) =&gt; {
+  return new Promise(async function (resolve, reject) {
+    let lightning = await loadLightning()
+    const randoStr = crypto.randomBytes(32).toString('hex');
+    const preimage = ByteBuffer.fromHex(randoStr)
+    const options = {
+      amt: Math.max(opts.amt, constants.min_sat_amount || 3),
+      final_cltv_delta: 10,
+      dest: ByteBuffer.fromHex(opts.dest),
+      dest_custom_records: {
+        [`${LND_KEYSEND_KEY}`]: preimage,
+        [`${SPHINX_CUSTOM_RECORD_KEY}`]: ByteBuffer.fromUTF8(opts.data),
+      },
+      payment_hash: sha.sha256.arrayBuffer(preimage.toBuffer()),
+      dest_features: [9],
+      fee_limit: { fixed: 10 }
+    }
+    const call = lightning.sendPayment()
+    call.on('data', function (payment) {
+      if (payment.payment_error) {
+        reject(payment.payment_error)
+      } else {
+        resolve(payment)
+      }
+    })
+    call.on('error', function (err) {
+      reject(err)
+    })
+    call.write(options)
+  })
+}
+</code></pre></div></div>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Lightning apps now have the ability to carry along custom information with them. If the node receiving your custom information knows how to interpret it you can add a new layer of communication or metadata to your payments.</p>
+
+<p>There are only a few examples I know of this being used, the ones I mentioned above. But there are a lot of possibilities here and I think it’s going to be a ripe area to explore in the future.</p>
+
+  </div><a class="u-url" href="/lightning/bitcoin/2021/03/21/custom-data-in-lightning-payments.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Klabo.blog</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Klabo.blog</li><li><a class="u-email" href="mailto:joelklabo@gmail.com">joelklabo@gmail.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/joelklabo"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">joelklabo</span></a></li><li><a href="https://www.twitter.com/joelklabo"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">joelklabo</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Writing about Bitcoin and the Lightning Network</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
