@@ -15,7 +15,7 @@ So, what type of transactions make this possible? Assuming we don’t want to ge
 ## Opening a Channel
 When you want to transact with some other node on the Lightning Network you open a channel with them. This will allow you to coordinate to create and sign Bitcoin transactions. Most of these will not be submitted to the blockchain, otherwise why use Lightning? But, any of them could be. They are all valid and would be accepted by the Bitcoin network.
 
-We’ll use our good friends *Alice* and *Bob* to represent the two nodes that want to make payments over a Lightning channel. In this example *Alice* wants to open a channel with *Bob* with a capacity of 1 BTC. The capacity is the total amount that will be available to use in this channel, it will all start of in *Alice’s* control, and then if she wants to make a payment to *Bob*, she will send him some BTC from that 1 BTC balance.
+We’ll use our good friends *Alice* and *Bob* to represent the two nodes that want to make payments over a Lightning channel. In this example *Alice* wants to open a channel with *Bob* with a capacity of 1 BTC. The capacity is the total amount that will be available to use in this channel, it will all start off in *Alice’s* control, and then if she wants to make a payment to *Bob*, she will send him some BTC from that 1 BTC balance.
 
 ### The Funding Transaction
 
